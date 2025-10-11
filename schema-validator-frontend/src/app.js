@@ -238,7 +238,7 @@ class SchemaValidatorApp {
         this.showLoading();
 
         try {
-            const response = await fetch(`${this.apiUrl}/test-endpoint`, {
+            const response = await fetch(`${this.apiUrl}/api/test-endpoint`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
