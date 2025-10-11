@@ -615,12 +615,64 @@ class SchemaValidatorApp {
 
     // Show loading spinner
     showLoading() {
-        document.getElementById('loadingSpinner').classList.remove('hidden');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        if (loadingSpinner) {
+            loadingSpinner.classList.remove('hidden');
+        }
     }
 
     // Hide loading spinner
     hideLoading() {
-        document.getElementById('loadingSpinner').classList.add('hidden');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        if (loadingSpinner) {
+            loadingSpinner.classList.add('hidden');
+        }
+    }
+
+    // Clean up orphaned schema files
+    async cleanupSchemas() {
+        if (!confirm('This will remove all schema files that are not associated with current endpoints. Continue?')) {
+            return;
+        }
+
+        this.logToConsole('🧹 Starting schema cleanup...', 'info');
+        this.showLoading();
+
+        try {
+            const response = await fetch(`${this.apiUrl}/api/cleanup-schemas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.logToConsole(`✅ ${result.message}`, 'success');
+                
+                if (result.cleanedUp && result.cleanedUp.length > 0) {
+                    this.logToConsole(`🗑️ Removed directories: ${result.cleanedUp.join(', ')}`, 'info');
+                } else {
+                    this.logToConsole('📁 No orphaned schema files found', 'info');
+                }
+                
+                if (result.errors && result.errors.length > 0) {
+                    result.errors.forEach(error => {
+                        this.logToConsole(`⚠️ Could not remove ${error.path}: ${error.error}`, 'warning');
+                    });
+                }
+            } else {
+                this.logToConsole(`❌ Cleanup failed: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            this.logToConsole(`❌ Cleanup request failed: ${error.message}`, 'error');
+            if (this.isDemo) {
+                this.logToConsole('💡 Demo note: Schema cleanup requires a connected backend', 'info');
+            }
+        } finally {
+            this.hideLoading();
+        }
     }
 
     // Update endpoint count badge
@@ -661,7 +713,7 @@ if (document.readyState === 'loading') {
     app = initializeApp();
 }
 
-// --- Service Worker Registration ---
+// --- Service Worker Registration (Optional) ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
@@ -669,7 +721,8 @@ if ('serviceWorker' in navigator) {
                 console.log('Service Worker registered with scope:', registration.scope);
             })
             .catch(error => {
-                console.error('Service Worker registration failed:', error);
+                // Service worker is optional, so just log the error without failing
+                console.warn('Service Worker registration failed (this is optional):', error.message);
             });
     });
 }
