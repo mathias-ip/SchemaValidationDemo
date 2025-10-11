@@ -16,7 +16,7 @@ class SchemaValidatorApp {
     // Load configuration from server
     async loadConfigFromServer() {
         try {
-            const response = await fetch(`${this.apiUrl}/config`, {
+            const response = await fetch(`${this.apiUrl}/api/config`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ class SchemaValidatorApp {
                 endpoints: this.endpoints
             };
 
-            const response = await fetch(`${this.apiUrl}/config`, {
+            const response = await fetch(`${this.apiUrl}/api/config`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
