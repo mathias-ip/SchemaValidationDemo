@@ -143,22 +143,47 @@ class SchemaValidatorApp {
 
     // Initialize event listeners
     initializeEventListeners() {
-        // Add endpoint form
-        document.getElementById('addEndpointForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addEndpoint();
-        });
+        // Ensure DOM is ready before setting up event listeners
+        const setupListeners = () => {
+            // Add endpoint form
+            const addForm = document.getElementById('addEndpointForm');
+            if (addForm) {
+                addForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addEndpoint();
+                });
+            }
 
-        // Action buttons
-        document.getElementById('validateBtn').addEventListener('click', () => this.validateSchemas());
-        document.getElementById('updateBtn').addEventListener('click', () => this.updateSnapshots());
-        document.getElementById('cleanupBtn').addEventListener('click', () => this.cleanupSchemas());
-        document.getElementById('exportBtn').addEventListener('click', () => this.exportConfig());
-        document.getElementById('importBtn').addEventListener('click', () => this.importConfig());
-        document.getElementById('clearConsole').addEventListener('click', () => this.clearConsole());
+            // Action buttons
+            const validateBtn = document.getElementById('validateBtn');
+            if (validateBtn) validateBtn.addEventListener('click', () => this.validateSchemas());
 
-        // File input for import
-        document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileImport(e));
+            const updateBtn = document.getElementById('updateBtn');
+            if (updateBtn) updateBtn.addEventListener('click', () => this.updateSnapshots());
+
+            const cleanupBtn = document.getElementById('cleanupBtn');
+            if (cleanupBtn) cleanupBtn.addEventListener('click', () => this.cleanupSchemas());
+
+            const exportBtn = document.getElementById('exportBtn');
+            if (exportBtn) exportBtn.addEventListener('click', () => this.exportConfig());
+
+            const importBtn = document.getElementById('importBtn');
+            if (importBtn) importBtn.addEventListener('click', () => this.importConfig());
+
+            const clearConsole = document.getElementById('clearConsole');
+            if (clearConsole) clearConsole.addEventListener('click', () => this.clearConsole());
+
+            // File input for import
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) fileInput.addEventListener('change', (e) => this.handleFileImport(e));
+        };
+
+        // Try to set up listeners now, or wait for DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupListeners);
+        } else {
+            setupListeners();
+        }
     }
 
     // Add new endpoint
@@ -428,6 +453,10 @@ class SchemaValidatorApp {
     // Render endpoints list
     renderEndpoints() {
         const container = document.getElementById('endpointsList');
+        if (!container) {
+            // If container doesn't exist yet, skip rendering
+            return;
+        }
         
         if (this.endpoints.length === 0) {
             container.innerHTML = `
@@ -451,15 +480,15 @@ class SchemaValidatorApp {
                         <p class="text-sm text-gray-600 break-all">${this.escapeHtml(endpoint.url)}</p>
                     </div>
                     <div class="flex items-center space-x-2 ml-4">
-                        <button onclick="app.testEndpoint(${JSON.stringify(endpoint).replace(/\"/g, '&quot;')})" 
+                        <button onclick="window.app?.testEndpoint(${JSON.stringify(endpoint).replace(/\"/g, '&quot;')})" 
                                 class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition duration-200">
                             <i class="fas fa-vial"></i> Test
                         </button>
-                        <button onclick="app.removeEndpoint('${endpoint.name}')" 
+                        <button onclick="window.app?.removeEndpoint('${endpoint.name}')" 
                                 class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition duration-200">
                             <i class="fas fa-trash"></i> Remove
                         </button>
-                        <button onclick="app.openEditSchemaModal('${endpoint.name}')" 
+                        <button onclick="window.app?.openEditSchemaModal('${endpoint.name}')" 
                                 class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition duration-200">
                             <i class="fas fa-edit"></i> Edit Schema
                         </button>
@@ -545,7 +574,7 @@ class SchemaValidatorApp {
                     <textarea id="editSchemaTextarea" class="w-full h-64 border rounded p-2 font-mono text-sm mb-2" spellcheck="false"></textarea>
                     <div id="editSchemaError" class="text-red-500 text-sm mb-2"></div>
                     <div class="flex justify-end space-x-2">
-                        <button onclick="app.hideEditSchemaModal()" class="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+                        <button onclick="window.app?.hideEditSchemaModal()" class="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
                         <button id="editSchemaSaveBtn" class="px-4 py-1 rounded bg-blue-500 text-white hover:bg-blue-600">Save</button>
                     </div>
                 </div>
@@ -567,6 +596,11 @@ class SchemaValidatorApp {
     // Logging utility
     logToConsole(message, type = 'info') {
         const consoleEl = document.getElementById('consoleOutput');
+        if (!consoleEl) {
+            // If console element doesn't exist yet, just log to browser console
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            return;
+        }
         const messageEl = document.createElement('div');
         messageEl.className = `console-message console-${type}`;
         messageEl.innerHTML = message;
@@ -598,13 +632,34 @@ class SchemaValidatorApp {
     }
 }
 
-// Global app instance
-const app = new SchemaValidatorApp();
+// Initialize the app when DOM is ready
+function initializeApp() {
+    const app = new SchemaValidatorApp();
+    
+    // Expose app globally for onclick handlers - set immediately
+    window.app = app;
+    globalThis.app = app;
+    
+    // Also expose on global object for bundlers
+    if (typeof global !== 'undefined') {
+        global.app = app;
+    }
+    
+    return app;
+}
 
-// Expose app globally for onclick handlers
-window.app = app;
-// Also expose as a backup for bundlers
-globalThis.app = app;
+// Expose app creation function globally as backup
+window.initializeApp = initializeApp;
+
+// Initialize based on document ready state
+let app;
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        app = initializeApp();
+    });
+} else {
+    app = initializeApp();
+}
 
 // --- Service Worker Registration ---
 if ('serviceWorker' in navigator) {
