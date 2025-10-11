@@ -595,7 +595,7 @@ class SchemaValidatorApp {
 
     // Logging utility
     logToConsole(message, type = 'info') {
-        const consoleEl = document.getElementById('consoleOutput');
+        const consoleEl = document.getElementById('console');
         if (!consoleEl) {
             // If console element doesn't exist yet, just log to browser console
             console.log(`[${type.toUpperCase()}] ${message}`);
@@ -610,7 +610,15 @@ class SchemaValidatorApp {
 
     // Clear console output
     clearConsole() {
-        document.getElementById('consoleOutput').innerHTML = '';
+        const consoleEl = document.getElementById('console');
+        if (consoleEl) {
+            consoleEl.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <span class="text-blue-400">$</span>
+                    <span>Schema Validator Demo ready...</span>
+                </div>
+            `;
+        }
     }
 
     // Show loading spinner
