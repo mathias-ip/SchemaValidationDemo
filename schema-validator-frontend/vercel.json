@@ -4,6 +4,6 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "env": {
-    "VITE_API_URL": "https://your-backend-url.onrender.com/api"
+    "VITE_API_URL": "https://schemavalidationbe.onrender.com"
   }
 }
