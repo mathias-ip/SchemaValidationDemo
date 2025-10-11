@@ -11,6 +11,9 @@ class SchemaValidatorApp {
         this.updateEndpointCount();
         this.logToConsole(`🌐 Demo mode - API URL: ${this.apiUrl}`, 'info');
         this.loadConfigFromServer();
+        
+        // Add edit schema modal to DOM
+        this.addEditSchemaModal();
     }
 
     // Load configuration from server
@@ -533,6 +536,24 @@ class SchemaValidatorApp {
         }
     }
 
+    // Add edit schema modal to DOM
+    addEditSchemaModal() {
+        const modalHtml = `
+            <div id="editSchemaModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 relative">
+                    <h2 class="text-lg font-semibold mb-2">Edit Schema for <span id="editSchemaEndpointName"></span></h2>
+                    <textarea id="editSchemaTextarea" class="w-full h-64 border rounded p-2 font-mono text-sm mb-2" spellcheck="false"></textarea>
+                    <div id="editSchemaError" class="text-red-500 text-sm mb-2"></div>
+                    <div class="flex justify-end space-x-2">
+                        <button onclick="app.hideEditSchemaModal()" class="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+                        <button id="editSchemaSaveBtn" class="px-4 py-1 rounded bg-blue-500 text-white hover:bg-blue-600">Save</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
     // Escape HTML for safe rendering
     escapeHtml(unsafe) {
         return unsafe
@@ -567,10 +588,23 @@ class SchemaValidatorApp {
     hideLoading() {
         document.getElementById('loadingSpinner').classList.add('hidden');
     }
+
+    // Update endpoint count badge
+    updateEndpointCount() {
+        const countElement = document.getElementById('endpointCount');
+        if (countElement) {
+            countElement.textContent = this.endpoints.length;
+        }
+    }
 }
 
 // Global app instance
 const app = new SchemaValidatorApp();
+
+// Expose app globally for onclick handlers
+window.app = app;
+// Also expose as a backup for bundlers
+globalThis.app = app;
 
 // --- Service Worker Registration ---
 if ('serviceWorker' in navigator) {
