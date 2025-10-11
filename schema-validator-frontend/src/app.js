@@ -283,7 +283,7 @@ class SchemaValidatorApp {
         this.showLoading();
 
         try {
-            const response = await fetch(`${this.apiUrl}/validate`, {
+            const response = await fetch(`${this.apiUrl}/api/validate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -327,7 +327,7 @@ class SchemaValidatorApp {
         this.showLoading();
 
         try {
-            const response = await fetch(`${this.apiUrl}/validate`, {
+            const response = await fetch(`${this.apiUrl}/api/validate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -576,6 +576,8 @@ class SchemaValidatorApp {
 
 // Initialize the app
 const app = new SchemaValidatorApp();
-
+window.app = app;
 // Export for external access
 window.schemaValidatorApp = app;
+
+//# sourceMappingURL=app.js.map
