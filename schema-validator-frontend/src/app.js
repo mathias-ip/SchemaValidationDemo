@@ -296,8 +296,13 @@ class SchemaValidatorApp {
             if (result.success) {
                 this.logToConsole('🎉 Schema validation completed successfully!', 'success');
                 if (result.stdout) {
-                    this.logToConsole('📋 Validation output:', 'info');
-                    this.logToConsole(result.stdout, 'info');
+                    // Only show lines with summary or success, filter out noise
+                    const lines = result.stdout.split('\n');
+                    lines.forEach(line => {
+                        if (/Loaded|matches snapshot|error|Error|failed|Failed|❌|✅|📋/i.test(line)) {
+                            this.logToConsole(line, /error|Error|failed|Failed|❌/i.test(line) ? 'error' : 'info');
+                        }
+                    });
                 }
             } else {
                 this.logToConsole(`❌ Validation failed: ${result.error}`, 'error');
@@ -340,8 +345,13 @@ class SchemaValidatorApp {
             if (result.success) {
                 this.logToConsole('🎉 Snapshots updated successfully!', 'success');
                 if (result.stdout) {
-                    this.logToConsole('📋 Update output:', 'info');
-                    this.logToConsole(result.stdout, 'info');
+                    // Only show lines with summary or success, filter out noise
+                    const lines = result.stdout.split('\n');
+                    lines.forEach(line => {
+                        if (/Loaded|matches snapshot|error|Error|failed|Failed|❌|✅|📋/i.test(line)) {
+                            this.logToConsole(line, /error|Error|failed|Failed|❌/i.test(line) ? 'error' : 'info');
+                        }
+                    });
                 }
             } else {
                 this.logToConsole(`❌ Update failed: ${result.error}`, 'error');
@@ -438,7 +448,7 @@ class SchemaValidatorApp {
                         <p class="text-sm text-gray-600 break-all">${this.escapeHtml(endpoint.url)}</p>
                     </div>
                     <div class="flex items-center space-x-2 ml-4">
-                        <button onclick="app.testEndpoint(${JSON.stringify(endpoint).replace(/"/g, '&quot;')})" 
+                        <button onclick="app.testEndpoint(${JSON.stringify(endpoint).replace(/\"/g, '&quot;')})" 
                                 class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition duration-200">
                             <i class="fas fa-vial"></i> Test
                         </button>
@@ -446,138 +456,131 @@ class SchemaValidatorApp {
                                 class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition duration-200">
                             <i class="fas fa-trash"></i> Remove
                         </button>
+                        <button onclick="app.openEditSchemaModal('${endpoint.name}')" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition duration-200">
+                            <i class="fas fa-edit"></i> Edit Schema
+                        </button>
                     </div>
                 </div>
             </div>
         `).join('');
     }
 
-    // Update endpoint count badge
-    updateEndpointCount() {
-        document.getElementById('endpointCount').textContent = this.endpoints.length;
-    }
-
-    // Log message to console
-    logToConsole(message, type = 'info') {
-        const console = document.getElementById('console');
-        const timestamp = new Date().toLocaleTimeString();
-        const icons = {
-            info: 'ℹ️',
-            success: '✅',
-            error: '❌',
-            warning: '⚠️'
-        };
-        
-        const colors = {
-            info: 'text-blue-400',
-            success: 'text-green-400',
-            error: 'text-red-400',
-            warning: 'text-yellow-400'
-        };
-
-        const logEntry = document.createElement('div');
-        logEntry.className = `flex items-start space-x-2 ${colors[type] || 'text-gray-400'}`;
-        logEntry.innerHTML = `
-            <span class="text-gray-500 text-xs">[${timestamp}]</span>
-            <span>${icons[type] || 'ℹ️'}</span>
-            <span class="flex-1">${this.escapeHtml(message)}</span>
-        `;
-        
-        console.appendChild(logEntry);
-        console.scrollTop = console.scrollHeight;
-    }
-
-    // Clear console
-    clearConsole() {
-        const console = document.getElementById('console');
-        console.innerHTML = `
-            <div class="flex items-center space-x-2">
-                <span class="text-blue-400">$</span>
-                <span>Schema Validator Demo ready...</span>
-            </div>
-        `;
-    }
-
-    // Show loading modal
-    showLoading() {
-        document.getElementById('loadingModal').classList.remove('hidden');
-    }
-
-    // Hide loading modal
-    hideLoading() {
-        document.getElementById('loadingModal').classList.add('hidden');
-    }
-
-    // Clean up orphaned schema files
-    async cleanupSchemas() {
-        if (!confirm('This will remove all schema files that are not associated with current endpoints. Continue?')) {
+    // --- Edit Schema Modal Logic ---
+    async openEditSchemaModal(endpointName) {
+        const endpoint = this.endpoints.find(ep => ep.name === endpointName);
+        if (!endpoint) {
+            this.logToConsole(`❌ Endpoint not found: ${endpointName}`, 'error');
             return;
         }
-
-        this.logToConsole('🧹 Starting schema cleanup...', 'info');
-        this.showLoading();
-
+        this.showEditSchemaModal();
+        document.getElementById('editSchemaEndpointName').textContent = endpointName;
+        document.getElementById('editSchemaSaveBtn').onclick = () => this.saveEditedSchema(endpointName);
+        document.getElementById('editSchemaError').textContent = '';
+        document.getElementById('editSchemaTextarea').value = '';
+        // Try to fetch schema from backend
         try {
-            const response = await fetch(`${this.apiUrl}/cleanup-schemas`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                this.logToConsole(`✅ ${result.message}`, 'success');
-                
-                if (result.cleanedUp && result.cleanedUp.length > 0) {
-                    this.logToConsole(`🗑️ Removed directories: ${result.cleanedUp.join(', ')}`, 'info');
-                } else {
-                    this.logToConsole('📁 No orphaned schema files found', 'info');
-                }
-                
-                if (result.errors && result.errors.length > 0) {
-                    result.errors.forEach(error => {
-                        this.logToConsole(`⚠️ Could not remove ${error.path}: ${error.error}`, 'warning');
-                    });
-                }
+            const res = await fetch(`${this.apiUrl}/api/schema/${encodeURIComponent(endpointName)}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('editSchemaTextarea').value = JSON.stringify(data.schema, null, 2);
             } else {
-                this.logToConsole(`❌ Cleanup failed: ${result.error}`, 'error');
+                throw new Error('Not found');
+            }
+        } catch {
+            // fallback: use local endpoint.schema if present
+            document.getElementById('editSchemaTextarea').value = endpoint.schema ? JSON.stringify(endpoint.schema, null, 2) : '{\n  \n}';
+        }
+    }
+    showEditSchemaModal() {
+        document.getElementById('editSchemaModal').classList.remove('hidden');
+    }
+    hideEditSchemaModal() {
+        document.getElementById('editSchemaModal').classList.add('hidden');
+    }
+    async saveEditedSchema(endpointName) {
+        const textarea = document.getElementById('editSchemaTextarea');
+        const errorDiv = document.getElementById('editSchemaError');
+        let schema;
+        try {
+            schema = JSON.parse(textarea.value);
+        } catch (e) {
+            errorDiv.textContent = 'Invalid JSON: ' + e.message;
+            return;
+        }
+        errorDiv.textContent = '';
+        this.showLoading();
+        try {
+            const res = await fetch(`${this.apiUrl}/api/schema/${encodeURIComponent(endpointName)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ schema })
+            });
+            if (res.ok) {
+                this.logToConsole(`✅ Schema updated for ${endpointName}`, 'success');
+                // Optionally update local endpoint object
+                const endpoint = this.endpoints.find(ep => ep.name === endpointName);
+                if (endpoint) endpoint.schema = schema;
+                this.hideEditSchemaModal();
+            } else {
+                const errorResult = await res.json();
+                throw new Error(errorResult.error || 'Failed to save schema');
             }
         } catch (error) {
-            this.logToConsole(`❌ Cleanup request failed: ${error.message}`, 'error');
-            if (this.isDemo) {
-                this.logToConsole('💡 Demo note: Schema cleanup requires a connected backend', 'info');
-            }
+            this.logToConsole(`❌ Failed to save schema: ${error.message}`, 'error');
         } finally {
             this.hideLoading();
         }
     }
 
-    // Escape HTML to prevent XSS
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    // Escape HTML for safe rendering
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
-    // Get endpoints for external use (e.g., by Playwright tests)
-    getEndpoints() {
-        return this.endpoints;
+    // Logging utility
+    logToConsole(message, type = 'info') {
+        const consoleEl = document.getElementById('consoleOutput');
+        const messageEl = document.createElement('div');
+        messageEl.className = `console-message console-${type}`;
+        messageEl.innerHTML = message;
+        consoleEl.appendChild(messageEl);
+        consoleEl.scrollTop = consoleEl.scrollHeight; // Auto-scroll to bottom
     }
 
-    // Set endpoints from external source
-    setEndpoints(endpoints) {
-        this.endpoints = endpoints;
-        this.saveEndpoints();
-        this.renderEndpoints();
+    // Clear console output
+    clearConsole() {
+        document.getElementById('consoleOutput').innerHTML = '';
+    }
+
+    // Show loading spinner
+    showLoading() {
+        document.getElementById('loadingSpinner').classList.remove('hidden');
+    }
+
+    // Hide loading spinner
+    hideLoading() {
+        document.getElementById('loadingSpinner').classList.add('hidden');
     }
 }
 
-// Initialize the app
+// Global app instance
 const app = new SchemaValidatorApp();
-window.app = app;
-// Export for external access
-window.schemaValidatorApp = app;
 
-//# sourceMappingURL=app.js.map
+// --- Service Worker Registration ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+    });
+}
