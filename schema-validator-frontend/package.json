@@ -1,0 +1,17 @@
+{
+  "name": "schema-validator-frontend",
+  "version": "1.0.0",
+  "description": "Public frontend for Schema Validator - demo interface for API schema validation",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "keywords": ["schema", "validation", "api", "swagger", "openapi", "demo"],
+  "author": "Your Name",
+  "license": "MIT"
+}
