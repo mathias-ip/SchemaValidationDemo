@@ -720,17 +720,3 @@ if (document.readyState === 'loading') {
 } else {
     app = initializeApp();
 }
-
-// --- Service Worker Registration (Optional) ---
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-                console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-                // Service worker is optional, so just log the error without failing
-                console.warn('Service Worker registration failed (this is optional):', error.message);
-            });
-    });
-}
