@@ -360,12 +360,12 @@ class SchemaValidatorApp {
         this.showLoading();
 
         try {
-            const response = await fetch(`${this.apiUrl}/api/validate-lightweight`, {
+            const response = await fetch(`${this.apiUrl}/api/update-snapshots`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ updateSnapshots: true })
+                body: JSON.stringify({})
             });
 
             const result = await response.json();
