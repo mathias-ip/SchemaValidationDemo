@@ -311,7 +311,7 @@ class SchemaValidatorApp {
         this.showLoading();
 
         try {
-            const response = await fetch(`${this.apiUrl}/api/validate`, {
+            const response = await fetch(`${this.apiUrl}/api/validate-lightweight`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -360,7 +360,7 @@ class SchemaValidatorApp {
         this.showLoading();
 
         try {
-            const response = await fetch(`${this.apiUrl}/api/validate`, {
+            const response = await fetch(`${this.apiUrl}/api/validate-lightweight`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
