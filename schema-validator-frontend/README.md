@@ -12,14 +12,6 @@ This is the public frontend for the Schema Validator tool. It provides a web int
 - 🧹 Clean up orphaned schema files
 - 🌐 Demo mode with sample data
 
-## Deployment
-
-### Environment Variables
-
-Configure the backend API URL using environment variables:
-
-- **Development**: `VITE_API_URL=http://localhost:3000/api`
-- **Production**: `VITE_API_URL=https://your-backend-url.com/api`
 
 ### Deploy to Vercel
 
@@ -34,38 +26,6 @@ Configure the backend API URL using environment variables:
 2. Upload the `dist` folder to Netlify
 3. Set the environment variable `VITE_API_URL` to your backend URL
 
-### Deploy to GitHub Pages
-
-1. Build the project: `npm run build`
-2. Copy the `dist` folder contents to your gh-pages branch
-3. Configure your backend URL in the build step
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
-
-## Backend Requirements
-
-This frontend requires a compatible backend API with the following endpoints:
-
-- `GET /api/config` - Get current configuration
-- `POST /api/config` - Save configuration
-- `DELETE /api/endpoints/:name` - Remove endpoint
-- `POST /api/test-endpoint` - Test endpoint connectivity
-- `POST /api/validate` - Run schema validation
-- `POST /api/cleanup-schemas` - Clean up orphaned schemas
 
 ## Demo Mode
 
